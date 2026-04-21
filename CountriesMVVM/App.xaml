@@ -1,0 +1,43 @@
+﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:CountriesMVVM"
+             x:Class="CountriesMVVM.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="BgPrimary">#FFFFFF</Color>
+            <Color x:Key="BgSecondary">#F5F5F5</Color>
+            <Color x:Key="BorderColor">#D4D4D4</Color>
+            <Color x:Key="TextPrimary">#111111</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+
+            <Style TargetType="ContentPage">
+                <Setter Property="BackgroundColor" Value="{StaticResource BgPrimary}" />
+            </Style>
+
+            <Style TargetType="Label">
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+            </Style>
+
+            <Style TargetType="Frame">
+                <Setter Property="BackgroundColor" Value="{StaticResource BgSecondary}" />
+                <Setter Property="BorderColor" Value="{StaticResource BorderColor}" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="14" />
+                <Setter Property="Margin" Value="0,6" />
+                <Setter Property="HasShadow" Value="False" />
+            </Style>
+
+            <Style TargetType="Button">
+                <Setter Property="BackgroundColor" Value="#111111" />
+                <Setter Property="TextColor" Value="#FFFFFF" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="HeightRequest" Value="46" />
+                <Setter Property="FontAttributes" Value="Bold" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+
+</Application>
+

@@ -1,0 +1,71 @@
+﻿<?xml version ="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:CountriesMVVM.ViewModels"
+             x:Class="CountriesMVVM.Views.CountriesPage">
+
+    <ContentPage.BindingContext>
+        <viewmodels:CountriesViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,20">
+        <Label Grid.Row="0"
+               Text="Paises del mundo"
+               FontSize="30"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource TextPrimary}"
+               Margin="0,8,0,14"/>
+
+        <SearchBar Grid.Row="1"
+                   Placeholder="Buscar pais..."
+                   Text="{Binding TextoBusqueda}"
+                   SearchCommand="{Binding FiltrarPaisesCommand}"
+                   PlaceholderColor="{StaticResource TextSecondary}"
+                   BackgroundColor="{StaticResource BgSecondary}"
+                   TextColor="{StaticResource TextPrimary}"
+                   Margin="0,0,0,8"/>
+
+        <Label Grid.Row="2"
+               Text="{Binding MensajeEstado}"
+               FontSize="13"
+               HorizontalOptions="Center"
+               Margin="0,0,0,8"
+               TextColor="{StaticResource TextSecondary}"/>
+
+        <CollectionView Grid.Row="3"
+                        ItemsSource="{Binding ListaPaises}"
+                        SelectionMode="Single"
+                        SelectedItem="{Binding PaisSeleccionado}">
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame>
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="{Binding Nombre}"
+                                   FontAttributes="Bold"
+                                   FontSize="20"
+                                   TextColor="{StaticResource TextPrimary}"/>
+                            <Label Text="{Binding Capital, StringFormat='Capital: {0}'}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                            <Label Text="{Binding Moneda, StringFormat='Moneda: {0}'}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
+
+
+
+
+
+
