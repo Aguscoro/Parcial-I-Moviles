@@ -1,30 +1,32 @@
 ﻿using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using CountriesMVVM.Services;
+using CountriesMVVM.Commands;
+using CountriesMVVM.Data;
 using CountriesMVVM.Models;
-using System.Linq;
+using CountriesMVVM.Services;
+using CountriesMVVM.Validations;
 
 namespace CountriesMVVM.ViewModels
 {
-    internal class CountriesViewModel : BaseViewModel
+    public class CountriesViewModel : BaseViewModel
     {
-        private readonly CountryService countryService;
+        private readonly ICountryService countryService;
+        private readonly ICountryRepository countryRepository;
+        private readonly ICountryValidator countryValidator;
+        private readonly INavigationService navigationService;
         private bool datosCargados;
 
         private ObservableCollection<CountrySummary> TodosLosPaises { get; set; } = new();
         public ObservableCollection<CountrySummary> ListaPaises { get; set; } = new();
 
-        // Mensaje de estado
-        private string mensajeEstado;
+        private string mensajeEstado = string.Empty;
         public string MensajeEstado
         {
             get => mensajeEstado;
             set => SetProperty(ref mensajeEstado, value);
         }
 
-        // Texto de búsqueda
-        private string textoBusqueda;
+        private string textoBusqueda = string.Empty;
         public string TextoBusqueda
         {
             get => textoBusqueda;
@@ -40,15 +42,22 @@ namespace CountriesMVVM.ViewModels
         public ICommand CargarPaisesCommand { get; }
         public ICommand FiltrarPaisesCommand { get; }
 
-        public CountriesViewModel()
+        public CountriesViewModel(
+            ICountryService countryService,
+            ICountryRepository countryRepository,
+            ICountryValidator countryValidator,
+            INavigationService navigationService)
         {
-            countryService = new CountryService();
-            CargarPaisesCommand = new Command(async () => await CargarPaisesAsync());
-            FiltrarPaisesCommand = new Command(FiltrarPaises);
-            _ = CargarPaisesAsync();
+            this.countryService = countryService;
+            this.countryRepository = countryRepository;
+            this.countryValidator = countryValidator;
+            this.navigationService = navigationService;
+
+            CargarPaisesCommand = new RelayCommand(CargarPaisesAsync);
+            FiltrarPaisesCommand = new RelayCommand(FiltrarPaises);
         }
 
-        private async Task CargarPaisesAsync()
+        public async Task CargarPaisesAsync()
         {
             if (datosCargados)
                 return;
@@ -58,6 +67,15 @@ namespace CountriesMVVM.ViewModels
                 MensajeEstado = "Cargando paises...";
 
                 var lista = await countryService.ObtenerPaisesAsync();
+
+                foreach (var pais in lista)
+                {
+                    var validacion = countryValidator.Validate(pais);
+                    if (!validacion.IsValid)
+                        throw new InvalidOperationException(validacion.ErrorMessage);
+                }
+
+                await countryRepository.SaveCountriesAsync(lista);
 
                 TodosLosPaises.Clear();
                 ListaPaises.Clear();
@@ -77,8 +95,15 @@ namespace CountriesMVVM.ViewModels
             }
         }
 
-        private void FiltrarPaises()
+        public void FiltrarPaises()
         {
+            var validacion = countryValidator.ValidateSearchText(TextoBusqueda);
+            if (!validacion.IsValid)
+            {
+                MensajeEstado = validacion.ErrorMessage;
+                return;
+            }
+
             ListaPaises.Clear();
 
             var filtrados = string.IsNullOrWhiteSpace(TextoBusqueda)
@@ -105,18 +130,8 @@ namespace CountriesMVVM.ViewModels
 
         private async Task NavegarADetalleAsync(CountrySummary pais)
         {
-            var parametros = new Dictionary<string, object>
-            {
-                { "nombrePais", Uri.EscapeDataString(pais.Nombre) },
-                { "capitalPais", Uri.EscapeDataString(pais.Capital) },
-                { "monedaPais", Uri.EscapeDataString(pais.Moneda) }
-            };
-
-            await Shell.Current.GoToAsync(nameof(Views.CountryDetailPage), parametros);
+            await navigationService.GoToCountryDetailAsync(pais);
             PaisSeleccionado = null;
         }
     }
 }
-
-
-

@@ -4,12 +4,17 @@ using System.Text.Json;
 
 namespace CountriesMVVM.Services
 {
-    internal class CountryService
+    public class CountryService : ICountryService
     {
         private const string UrlBase = "https://restcountries.com/v3.1/all?fields=name,capital,currencies";
-        private readonly HttpClient clienteHttp = new();
+        private readonly HttpClient clienteHttp;
 
-        private string ObtenerMensajeError(HttpRequestException ex)
+        public CountryService(HttpClient clienteHttp)
+        {
+            this.clienteHttp = clienteHttp;
+        }
+
+        internal string ObtenerMensajeError(HttpRequestException ex)
         {
             return ex.StatusCode switch
             {
@@ -62,5 +67,3 @@ namespace CountriesMVVM.Services
         }
     }
 }
-
-

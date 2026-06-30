@@ -1,0 +1,139 @@
+name: CI/CD CountriesMVVM
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }} / ${{ matrix.configuration }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        configuration: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache paquetes NuGet
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-${{ matrix.configuration }}-
+            nuget-${{ runner.os }}-
+
+      - name: Restore (NuGet)
+        run: |
+          dotnet restore CountriesMVVM.Core/CountriesMVVM.Core.csproj
+          dotnet restore CountriesMVVM.Tests/CountriesMVVM.Tests.csproj
+
+      - name: Build
+        run: dotnet build CountriesMVVM.Tests/CountriesMVVM.Tests.csproj --configuration ${{ matrix.configuration }} --no-restore
+
+      - name: Test
+        run: >
+          dotnet test CountriesMVVM.Tests/CountriesMVVM.Tests.csproj
+          --configuration ${{ matrix.configuration }}
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=test-results-${{ matrix.os }}-${{ matrix.configuration }}.trx"
+          --results-directory "${{ runner.temp }}/test-results"
+          --collect:"XPlat Code Coverage"
+
+      - name: Publicar artefacto de resultados de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+          path: ${{ runner.temp }}/test-results/**
+          retention-days: 14
+
+      - name: Publicar artefacto de compilacion (Core)
+        uses: actions/upload-artifact@v4
+        with:
+          name: countriesmvvm-core-${{ matrix.os }}-${{ matrix.configuration }}
+          path: |
+            CountriesMVVM.Core/bin/${{ matrix.configuration }}/**/*
+          retention-days: 14
+
+  maui-build:
+    name: MAUI Build (Windows / ${{ matrix.configuration }})
+    runs-on: windows-latest
+    needs: build-and-test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache paquetes NuGet
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+          key: nuget-maui-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/packages.lock.json') }}
+          restore-keys: |
+            nuget-maui-${{ matrix.configuration }}-
+            nuget-${{ runner.os }}-
+
+      - name: Instalar workload MAUI
+        run: dotnet workload install maui --skip-manifest-update
+
+      - name: Restore (NuGet)
+        run: dotnet restore CountriesMVVM/CountriesMVVM.csproj
+
+      - name: Build MAUI (Windows)
+        run: >
+          dotnet build CountriesMVVM/CountriesMVVM.csproj
+          --configuration ${{ matrix.configuration }}
+          --framework net10.0-windows10.0.19041.0
+          --no-restore
+
+      - name: Publish MAUI (Windows)
+        run: >
+          dotnet publish CountriesMVVM/CountriesMVVM.csproj
+          --configuration ${{ matrix.configuration }}
+          --framework net10.0-windows10.0.19041.0
+          --output "${{ runner.temp }}/maui-publish"
+          --no-build
+
+      - name: Publicar artefacto MAUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: countriesmvvm-maui-windows-${{ matrix.configuration }}
+          path: ${{ runner.temp }}/maui-publish/**
+          retention-days: 14

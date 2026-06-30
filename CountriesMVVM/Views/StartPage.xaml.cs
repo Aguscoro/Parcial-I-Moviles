@@ -1,13 +1,13 @@
-﻿namespace CountriesMVVM.Views
+﻿using CountriesMVVM.ViewModels;
+
+namespace CountriesMVVM.Views
 {
     public partial class StartPage : ContentPage
     {
-        public StartPage()
+        public StartPage(StartViewModel viewModel)
         {
             InitializeComponent();
+            BindingContext = viewModel;
         }
     }
 }
-
-
-

@@ -72,6 +72,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\CountriesMVVM.Core\CountriesMVVM.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="Views\CountryDetailPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

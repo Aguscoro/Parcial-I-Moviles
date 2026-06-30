@@ -1,12 +1,7 @@
 ﻿<?xml version ="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodels="clr-namespace:CountriesMVVM.ViewModels"
              x:Class="CountriesMVVM.Views.CountriesPage">
-
-    <ContentPage.BindingContext>
-        <viewmodels:CountriesViewModel />
-    </ContentPage.BindingContext>
 
     <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,20">
         <Label Grid.Row="0"

@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="../CountriesMVVM.Core/CountriesMVVM.Core.csproj" />
   <Project Path="CountriesMVVM.csproj" />
+  <Project Path="../CountriesMVVM.Tests/CountriesMVVM.Tests.csproj" />
 </Solution>
