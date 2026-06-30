@@ -55,9 +55,7 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Restore (NuGet)
-        run: |
-          dotnet restore CountriesMVVM.Core/CountriesMVVM.Core.csproj
-          dotnet restore CountriesMVVM.Tests/CountriesMVVM.Tests.csproj
+        run: dotnet restore CountriesMVVM.Tests/CountriesMVVM.Tests.csproj
 
       - name: Build
         run: dotnet build CountriesMVVM.Tests/CountriesMVVM.Tests.csproj --configuration ${{ matrix.configuration }} --no-restore
