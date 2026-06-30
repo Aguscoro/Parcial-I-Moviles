@@ -4,6 +4,6 @@ namespace CountriesMVVM.Services
 {
     public interface ICountryService
     {
-        Task<List<CountrySummary>> ObtenerPaisesAsync();
+        Task<IReadOnlyList<CountrySummary>> ObtenerPaisesAsync();
     }
 }

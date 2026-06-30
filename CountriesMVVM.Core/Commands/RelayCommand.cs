@@ -6,16 +6,23 @@ namespace CountriesMVVM.Commands
     {
         private readonly Action? execute;
         private readonly Func<Task>? executeAsync;
+        private readonly Func<bool>? canExecute;
 
-        public RelayCommand(Action execute) => this.execute = execute;
+        public RelayCommand(Action execute, Func<bool>? canExecute = null)
+        {
+            this.execute = execute;
+            this.canExecute = canExecute;
+        }
 
-        public RelayCommand(Func<Task> executeAsync) => this.executeAsync = executeAsync;
+        public RelayCommand(Func<Task> executeAsync, Func<bool>? canExecute = null)
+        {
+            this.executeAsync = executeAsync;
+            this.canExecute = canExecute;
+        }
 
-#pragma warning disable CS0067
         public event EventHandler? CanExecuteChanged;
-#pragma warning restore CS0067
 
-        public bool CanExecute(object? parameter) => true;
+        public bool CanExecute(object? parameter) => canExecute?.Invoke() ?? true;
 
         public void Execute(object? parameter)
         {
@@ -24,5 +31,7 @@ namespace CountriesMVVM.Commands
             else
                 execute?.Invoke();
         }
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

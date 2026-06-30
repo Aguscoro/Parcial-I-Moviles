@@ -1,3 +1,5 @@
+using CountriesMVVM.Exceptions;
+
 namespace CountriesMVVM.Services.Sensors
 {
     public class MauiCameraService : ICameraService
@@ -12,10 +14,10 @@ namespace CountriesMVVM.Services.Sensors
         public async Task<string?> CapturePhotoAsync(string fileName)
         {
             if (!MediaPicker.Default.IsCaptureSupported)
-                throw new InvalidOperationException("La cámara no está disponible en este dispositivo.");
+                throw new ServiceException("La cámara no está disponible en este dispositivo.");
 
             if (!await permissionService.EnsureGrantedAsync<Permissions.Camera>())
-                throw new InvalidOperationException("Permiso de cámara denegado.");
+                throw new ServiceException("Permiso de cámara denegado.");
 
             var photo = await MediaPicker.Default.CapturePhotoAsync();
             if (photo is null)

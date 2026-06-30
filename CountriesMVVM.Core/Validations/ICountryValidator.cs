@@ -6,5 +6,7 @@ namespace CountriesMVVM.Validations
     {
         ValidationResult Validate(CountrySummary country);
         ValidationResult ValidateSearchText(string? searchText);
+        ValidationResult ValidateDetail(string? nombre, string? capital, string? moneda);
+        IReadOnlyList<CountrySummary> FilterValidCountries(IEnumerable<CountrySummary> countries);
     }
 }

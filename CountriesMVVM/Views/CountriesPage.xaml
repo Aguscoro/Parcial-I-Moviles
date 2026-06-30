@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CountriesMVVM.Views.CountriesPage">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="16,20">
         <Label Grid.Row="0"
                Text="Paises del mundo"
                FontSize="30"
@@ -15,23 +15,29 @@
         <SearchBar Grid.Row="1"
                    Placeholder="Buscar pais..."
                    Text="{Binding TextoBusqueda}"
-                   SearchCommand="{Binding FiltrarPaisesCommand}"
                    PlaceholderColor="{StaticResource TextSecondary}"
                    BackgroundColor="{StaticResource BgSecondary}"
                    TextColor="{StaticResource TextPrimary}"
-                   Margin="0,0,0,8"/>
+                   Margin="0,0,0,4"/>
 
         <Label Grid.Row="2"
+               Text="{Binding ErrorBusqueda}"
+               FontSize="12"
+               TextColor="IndianRed"
+               IsVisible="{Binding TieneErrorBusqueda}"
+               Margin="0,0,0,4"/>
+
+        <Label Grid.Row="3"
                Text="{Binding MensajeEstado}"
                FontSize="13"
                HorizontalOptions="Center"
                Margin="0,0,0,8"
                TextColor="{StaticResource TextSecondary}"/>
 
-        <CollectionView Grid.Row="3"
+        <CollectionView x:Name="PaisesCollection"
+                        Grid.Row="4"
                         ItemsSource="{Binding ListaPaises}"
-                        SelectionMode="Single"
-                        SelectedItem="{Binding PaisSeleccionado}">
+                        SelectionMode="Single">
 
             <CollectionView.ItemsLayout>
                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>

@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CountriesMVVM.Commands;
-using CountriesMVVM.Data;
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Models;
 using CountriesMVVM.Services;
 using CountriesMVVM.Validations;
@@ -11,13 +11,13 @@ namespace CountriesMVVM.ViewModels
     public class CountriesViewModel : BaseViewModel
     {
         private readonly ICountryService countryService;
-        private readonly ICountryRepository countryRepository;
         private readonly ICountryValidator countryValidator;
         private readonly INavigationService navigationService;
+        private readonly IExceptionHandler exceptionHandler;
         private bool datosCargados;
 
-        private ObservableCollection<CountrySummary> TodosLosPaises { get; set; } = new();
-        public ObservableCollection<CountrySummary> ListaPaises { get; set; } = new();
+        private ObservableCollection<CountrySummary> todosLosPaises = new();
+        public ObservableCollection<CountrySummary> ListaPaises { get; } = new();
 
         private string mensajeEstado = string.Empty;
         public string MensajeEstado
@@ -26,6 +26,19 @@ namespace CountriesMVVM.ViewModels
             set => SetProperty(ref mensajeEstado, value);
         }
 
+        private string errorBusqueda = string.Empty;
+        public string ErrorBusqueda
+        {
+            get => errorBusqueda;
+            set
+            {
+                if (SetProperty(ref errorBusqueda, value))
+                    OnPropertyChanged(nameof(TieneErrorBusqueda));
+            }
+        }
+
+        public bool TieneErrorBusqueda => !string.IsNullOrWhiteSpace(ErrorBusqueda);
+
         private string textoBusqueda = string.Empty;
         public string TextoBusqueda
         {
@@ -33,65 +46,55 @@ namespace CountriesMVVM.ViewModels
             set
             {
                 if (SetProperty(ref textoBusqueda, value))
-                {
                     FiltrarPaises();
-                }
             }
         }
 
         public ICommand CargarPaisesCommand { get; }
-        public ICommand FiltrarPaisesCommand { get; }
 
         public CountriesViewModel(
             ICountryService countryService,
-            ICountryRepository countryRepository,
             ICountryValidator countryValidator,
-            INavigationService navigationService)
+            INavigationService navigationService,
+            IExceptionHandler exceptionHandler)
         {
             this.countryService = countryService;
-            this.countryRepository = countryRepository;
             this.countryValidator = countryValidator;
             this.navigationService = navigationService;
+            this.exceptionHandler = exceptionHandler;
 
-            CargarPaisesCommand = new RelayCommand(CargarPaisesAsync);
-            FiltrarPaisesCommand = new RelayCommand(FiltrarPaises);
+            CargarPaisesCommand = new RelayCommand(CargarPaisesAsync, () => !IsBusy);
         }
 
         public async Task CargarPaisesAsync()
         {
-            if (datosCargados)
+            if (datosCargados || IsBusy)
                 return;
+
+            IsBusy = true;
+            MensajeEstado = "Cargando paises...";
 
             try
             {
-                MensajeEstado = "Cargando paises...";
-
                 var lista = await countryService.ObtenerPaisesAsync();
 
-                foreach (var pais in lista)
-                {
-                    var validacion = countryValidator.Validate(pais);
-                    if (!validacion.IsValid)
-                        throw new InvalidOperationException(validacion.ErrorMessage);
-                }
-
-                await countryRepository.SaveCountriesAsync(lista);
-
-                TodosLosPaises.Clear();
+                todosLosPaises = new ObservableCollection<CountrySummary>(lista);
                 ListaPaises.Clear();
 
-                foreach (var pais in lista)
-                {
-                    TodosLosPaises.Add(pais);
+                foreach (var pais in todosLosPaises)
                     ListaPaises.Add(pais);
-                }
 
                 datosCargados = true;
                 MensajeEstado = "Paises cargados exitosamente.";
             }
             catch (Exception ex)
             {
-                MensajeEstado = ex.Message;
+                MensajeEstado = exceptionHandler.GetUserMessage(ex);
+            }
+            finally
+            {
+                IsBusy = false;
+                (CargarPaisesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -100,38 +103,35 @@ namespace CountriesMVVM.ViewModels
             var validacion = countryValidator.ValidateSearchText(TextoBusqueda);
             if (!validacion.IsValid)
             {
+                ErrorBusqueda = validacion.ErrorMessage;
+                return;
+            }
+
+            ErrorBusqueda = string.Empty;
+            ListaPaises.Clear();
+
+            var filtrados = string.IsNullOrWhiteSpace(TextoBusqueda)
+                ? todosLosPaises
+                : todosLosPaises.Where(p =>
+                    p.Nombre.Contains(TextoBusqueda, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var pais in filtrados)
+                ListaPaises.Add(pais);
+        }
+
+        public async Task NavegarAlDetalleAsync(CountrySummary pais)
+        {
+            if (IsBusy)
+                return;
+
+            var validacion = countryValidator.Validate(pais);
+            if (!validacion.IsValid)
+            {
                 MensajeEstado = validacion.ErrorMessage;
                 return;
             }
 
-            ListaPaises.Clear();
-
-            var filtrados = string.IsNullOrWhiteSpace(TextoBusqueda)
-                ? TodosLosPaises
-                : TodosLosPaises.Where(p =>
-                    p.Nombre.Contains(TextoBusqueda, StringComparison.OrdinalIgnoreCase));
-
-            foreach (var p in filtrados)
-                ListaPaises.Add(p);
-        }
-
-        private CountrySummary? paisSeleccionado;
-        public CountrySummary? PaisSeleccionado
-        {
-            get => paisSeleccionado;
-            set
-            {
-                if (!SetProperty(ref paisSeleccionado, value) || value is null)
-                    return;
-
-                _ = NavegarADetalleAsync(value);
-            }
-        }
-
-        private async Task NavegarADetalleAsync(CountrySummary pais)
-        {
             await navigationService.GoToCountryDetailAsync(pais);
-            PaisSeleccionado = null;
         }
     }
 }

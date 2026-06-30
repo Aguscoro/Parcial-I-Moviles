@@ -1,3 +1,5 @@
+using CountriesMVVM.Exceptions;
+
 namespace CountriesMVVM.Services.Sensors
 {
     public class MauiLocationService : ILocationService
@@ -12,7 +14,7 @@ namespace CountriesMVVM.Services.Sensors
         public async Task<Location?> GetCurrentLocationAsync()
         {
             if (!await permissionService.EnsureGrantedAsync<Permissions.LocationWhenInUse>())
-                throw new InvalidOperationException("Permiso de ubicación denegado.");
+                throw new ServiceException("Permiso de ubicación denegado.");
 
             return await Geolocation.GetLocationAsync(new GeolocationRequest
             {

@@ -1,6 +1,8 @@
 ﻿using System.Windows.Input;
 using CountriesMVVM.Commands;
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Services.Sensors;
+using CountriesMVVM.Validations;
 
 namespace CountriesMVVM.ViewModels
 {
@@ -14,16 +16,30 @@ namespace CountriesMVVM.ViewModels
         private readonly ICameraService cameraService;
         private readonly IMotionSensorService motionSensorService;
         private readonly IVibrationService vibrationService;
+        private readonly ICountryValidator countryValidator;
+        private readonly IExceptionHandler exceptionHandler;
         private DateTime ultimaVibracion = DateTime.MinValue;
 
         private string nombrePais = string.Empty;
-        public string NombrePais { get => nombrePais; set => SetProperty(ref nombrePais, Uri.UnescapeDataString(value ?? string.Empty)); }
+        public string NombrePais
+        {
+            get => nombrePais;
+            set => SetProperty(ref nombrePais, Uri.UnescapeDataString(value ?? string.Empty));
+        }
 
         private string capitalPais = string.Empty;
-        public string CapitalPais { get => capitalPais; set => SetProperty(ref capitalPais, Uri.UnescapeDataString(value ?? string.Empty)); }
+        public string CapitalPais
+        {
+            get => capitalPais;
+            set => SetProperty(ref capitalPais, Uri.UnescapeDataString(value ?? string.Empty));
+        }
 
         private string monedaPais = string.Empty;
-        public string MonedaPais { get => monedaPais; set => SetProperty(ref monedaPais, Uri.UnescapeDataString(value ?? string.Empty)); }
+        public string MonedaPais
+        {
+            get => monedaPais;
+            set => SetProperty(ref monedaPais, Uri.UnescapeDataString(value ?? string.Empty));
+        }
 
         private string ubicacionGps = "Sin datos de ubicación";
         public string UbicacionGps
@@ -67,19 +83,31 @@ namespace CountriesMVVM.ViewModels
             ILocationService locationService,
             ICameraService cameraService,
             IMotionSensorService motionSensorService,
-            IVibrationService vibrationService)
+            IVibrationService vibrationService,
+            ICountryValidator countryValidator,
+            IExceptionHandler exceptionHandler)
         {
             this.locationService = locationService;
             this.cameraService = cameraService;
             this.motionSensorService = motionSensorService;
             this.vibrationService = vibrationService;
+            this.countryValidator = countryValidator;
+            this.exceptionHandler = exceptionHandler;
 
-            ObtenerUbicacionCommand = new RelayCommand(ObtenerUbicacionAsync);
-            CapturarFotoCommand = new RelayCommand(CapturarFotoAsync);
+            ObtenerUbicacionCommand = new RelayCommand(ObtenerUbicacionAsync, () => !IsBusy);
+            CapturarFotoCommand = new RelayCommand(CapturarFotoAsync, () => !IsBusy);
+        }
+
+        public void ValidarDatosRecibidos()
+        {
+            var validacion = countryValidator.ValidateDetail(NombrePais, CapitalPais, MonedaPais);
+            if (!validacion.IsValid)
+                MensajeSensores = validacion.ErrorMessage;
         }
 
         public void IniciarSensores()
         {
+            ValidarDatosRecibidos();
             motionSensorService.Start(OnAccelerometerReading, OnGyroscopeReading);
             MensajeSensores = motionSensorService.IsAccelerometerAvailable || motionSensorService.IsGyroscopeAvailable
                 ? "Sensores de movimiento activos. Agitá el dispositivo para vibrar."
@@ -93,6 +121,10 @@ namespace CountriesMVVM.ViewModels
 
         private async Task ObtenerUbicacionAsync()
         {
+            if (IsBusy)
+                return;
+
+            IsBusy = true;
             try
             {
                 MensajeSensores = "Solicitando permiso de ubicación...";
@@ -111,12 +143,22 @@ namespace CountriesMVVM.ViewModels
             catch (Exception ex)
             {
                 UbicacionGps = "Ubicación no disponible.";
-                MensajeSensores = ex.Message;
+                MensajeSensores = exceptionHandler.GetUserMessage(ex);
+            }
+            finally
+            {
+                IsBusy = false;
+                (ObtenerUbicacionCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (CapturarFotoCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
         private async Task CapturarFotoAsync()
         {
+            if (IsBusy)
+                return;
+
+            IsBusy = true;
             try
             {
                 MensajeSensores = "Solicitando permiso de cámara...";
@@ -136,7 +178,13 @@ namespace CountriesMVVM.ViewModels
             catch (Exception ex)
             {
                 RutaFoto = "Sin foto capturada";
-                MensajeSensores = ex.Message;
+                MensajeSensores = exceptionHandler.GetUserMessage(ex);
+            }
+            finally
+            {
+                IsBusy = false;
+                (ObtenerUbicacionCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (CapturarFotoCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 

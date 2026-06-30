@@ -1,4 +1,4 @@
-using CountriesMVVM.Data;
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Models;
 using CountriesMVVM.Services;
 using CountriesMVVM.Validations;
@@ -9,8 +9,10 @@ namespace CountriesMVVM.Tests.Unit.ViewModels
 {
     public class CountriesViewModelTests
     {
+        private readonly IExceptionHandler exceptionHandler = new ExceptionHandler();
+
         [Fact]
-        public async Task CargarPaisesAsync_ConServicioMock_PueblaListaYGuardaEnRepositorio()
+        public async Task CargarPaisesAsync_ConServicioMock_PueblaLista()
         {
             var paises = new List<CountrySummary>
             {
@@ -21,37 +23,32 @@ namespace CountriesMVVM.Tests.Unit.ViewModels
             var serviceMock = new Mock<ICountryService>();
             serviceMock.Setup(s => s.ObtenerPaisesAsync()).ReturnsAsync(paises);
 
-            var repositoryMock = new Mock<ICountryRepository>();
-            repositoryMock.Setup(r => r.SaveCountriesAsync(It.IsAny<IEnumerable<CountrySummary>>()))
-                .Returns(Task.CompletedTask);
-
             var navigationMock = new Mock<INavigationService>();
 
             var viewModel = new CountriesViewModel(
                 serviceMock.Object,
-                repositoryMock.Object,
                 new CountryValidator(),
-                navigationMock.Object);
+                navigationMock.Object,
+                exceptionHandler);
 
             await viewModel.CargarPaisesAsync();
 
             Assert.Equal(2, viewModel.ListaPaises.Count);
             Assert.Equal("Paises cargados exitosamente.", viewModel.MensajeEstado);
-            repositoryMock.Verify(r => r.SaveCountriesAsync(paises), Times.Once);
         }
 
         [Fact]
-        public async Task CargarPaisesAsync_CuandoServicioFalla_MuestraMensajeDeError()
+        public async Task CargarPaisesAsync_CuandoServicioFalla_MuestraMensajeAmigable()
         {
             var serviceMock = new Mock<ICountryService>();
             serviceMock.Setup(s => s.ObtenerPaisesAsync())
-                .ThrowsAsync(new Exception("Sin conexion"));
+                .ThrowsAsync(new ServiceException("Sin conexion"));
 
             var viewModel = new CountriesViewModel(
                 serviceMock.Object,
-                Mock.Of<ICountryRepository>(),
                 new CountryValidator(),
-                Mock.Of<INavigationService>());
+                Mock.Of<INavigationService>(),
+                exceptionHandler);
 
             await viewModel.CargarPaisesAsync();
 
@@ -73,15 +70,30 @@ namespace CountriesMVVM.Tests.Unit.ViewModels
 
             var viewModel = new CountriesViewModel(
                 serviceMock.Object,
-                Mock.Of<ICountryRepository>(),
                 new CountryValidator(),
-                Mock.Of<INavigationService>());
+                Mock.Of<INavigationService>(),
+                exceptionHandler);
 
             await viewModel.CargarPaisesAsync();
             viewModel.TextoBusqueda = "col";
 
             Assert.Single(viewModel.ListaPaises);
             Assert.Equal("Colombia", viewModel.ListaPaises[0].Nombre);
+        }
+
+        [Fact]
+        public void FiltrarPaises_ConTextoMuyLargo_MuestraErrorBusqueda()
+        {
+            var viewModel = new CountriesViewModel(
+                Mock.Of<ICountryService>(),
+                new CountryValidator(),
+                Mock.Of<INavigationService>(),
+                exceptionHandler);
+
+            viewModel.TextoBusqueda = new string('a', 101);
+
+            Assert.True(viewModel.TieneErrorBusqueda);
+            Assert.Contains("100", viewModel.ErrorBusqueda);
         }
     }
 }

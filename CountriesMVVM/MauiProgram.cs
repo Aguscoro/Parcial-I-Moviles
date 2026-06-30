@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using CountriesMVVM.Data;
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Services;
 using CountriesMVVM.Services.Sensors;
 using CountriesMVVM.Validations;
@@ -28,10 +29,19 @@ namespace CountriesMVVM
             var dbPath = Path.Combine(FileSystem.AppDataDirectory, "countries.db");
             var connectionString = $"Data Source={dbPath}";
 
-            builder.Services.AddSingleton<HttpClient>();
+            builder.Services.AddSingleton(_ =>
+            {
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
+                return client;
+            });
+
             builder.Services.AddSingleton<ICountryRepository>(_ => new CountryRepository(connectionString));
             builder.Services.AddSingleton<ICountryService, CountryService>();
             builder.Services.AddSingleton<ICountryValidator, CountryValidator>();
+            builder.Services.AddSingleton<IExceptionHandler, ExceptionHandler>();
             builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
 
             builder.Services.AddSingleton<IPermissionService, MauiPermissionService>();

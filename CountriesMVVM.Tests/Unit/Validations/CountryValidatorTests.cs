@@ -1,3 +1,4 @@
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Models;
 using CountriesMVVM.Validations;
 
@@ -26,12 +27,23 @@ namespace CountriesMVVM.Tests.Unit.Validations
         [Fact]
         public void Validate_ConNombreVacio_RetornaError()
         {
-            var pais = new CountrySummary { Nombre = "   " };
+            var pais = new CountrySummary { Nombre = "   ", Capital = "X", Moneda = "Y" };
 
             var resultado = validator.Validate(pais);
 
             Assert.False(resultado.IsValid);
             Assert.Contains("obligatorio", resultado.ErrorMessage);
+        }
+
+        [Fact]
+        public void Validate_ConCapitalVacia_RetornaError()
+        {
+            var pais = new CountrySummary { Nombre = "Chile", Capital = " ", Moneda = "Peso" };
+
+            var resultado = validator.Validate(pais);
+
+            Assert.False(resultado.IsValid);
+            Assert.Contains("capital", resultado.ErrorMessage, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -46,9 +58,24 @@ namespace CountriesMVVM.Tests.Unit.Validations
         }
 
         [Fact]
-        public void ValidateSearchText_ConTextoNulo_RetornaExito()
+        public void FilterValidCountries_ExcluyePaisesInvalidos()
         {
-            var resultado = validator.ValidateSearchText(null);
+            var paises = new[]
+            {
+                new CountrySummary { Nombre = "Chile", Capital = "Santiago", Moneda = "Peso" },
+                new CountrySummary { Nombre = "", Capital = "X", Moneda = "Y" }
+            };
+
+            var validos = validator.FilterValidCountries(paises);
+
+            Assert.Single(validos);
+            Assert.Equal("Chile", validos[0].Nombre);
+        }
+
+        [Fact]
+        public void ValidateDetail_ConDatosValidos_RetornaExito()
+        {
+            var resultado = validator.ValidateDetail("Peru", "Lima", "Sol");
 
             Assert.True(resultado.IsValid);
         }

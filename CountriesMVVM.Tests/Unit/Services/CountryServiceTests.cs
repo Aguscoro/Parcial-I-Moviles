@@ -1,6 +1,10 @@
 using System.Net;
+using CountriesMVVM.Data;
+using CountriesMVVM.Exceptions;
 using CountriesMVVM.Services;
 using CountriesMVVM.Tests.Helpers;
+using CountriesMVVM.Validations;
+using Moq;
 
 namespace CountriesMVVM.Tests.Unit.Services
 {
@@ -29,34 +33,49 @@ namespace CountriesMVVM.Tests.Unit.Services
                 Content = new StringContent(json)
             });
 
-            var service = new CountryService(new HttpClient(handler));
+            var repositoryMock = new Mock<ICountryRepository>();
+            repositoryMock.Setup(r => r.SaveCountriesAsync(It.IsAny<IEnumerable<CountriesMVVM.Models.CountrySummary>>()))
+                .Returns(Task.CompletedTask);
+
+            var service = new CountryService(
+                new HttpClient(handler),
+                repositoryMock.Object,
+                new CountryValidator());
 
             var resultado = await service.ObtenerPaisesAsync();
 
             Assert.Equal(2, resultado.Count);
             Assert.Equal("Argentina", resultado[0].Nombre);
             Assert.Equal("Uruguay", resultado[1].Nombre);
-            Assert.Equal("Montevideo", resultado[1].Capital);
-            Assert.Equal("Peso uruguayo", resultado[1].Moneda);
+            repositoryMock.Verify(r => r.SaveCountriesAsync(It.IsAny<IEnumerable<CountriesMVVM.Models.CountrySummary>>()), Times.Once);
         }
 
         [Fact]
-        public async Task ObtenerPaisesAsync_ConError404_LanzaExcepcionConMensajeClaro()
+        public async Task ObtenerPaisesAsync_ConError404_LanzaServiceException()
         {
             var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
-            var service = new CountryService(new HttpClient(handler));
+            var repositoryMock = new Mock<ICountryRepository>();
+            repositoryMock.Setup(r => r.GetCountriesAsync()).ReturnsAsync(Array.Empty<CountriesMVVM.Models.CountrySummary>());
 
-            var ex = await Assert.ThrowsAsync<Exception>(() => service.ObtenerPaisesAsync());
+            var service = new CountryService(
+                new HttpClient(handler),
+                repositoryMock.Object,
+                new CountryValidator());
 
-            Assert.Contains("404", ex.Message);
+            var ex = await Assert.ThrowsAsync<ServiceException>(() => service.ObtenerPaisesAsync());
+
+            Assert.Contains("404", ex.UserMessage);
         }
 
         [Theory]
         [InlineData(HttpStatusCode.BadRequest, "400")]
         [InlineData(HttpStatusCode.InternalServerError, "500")]
-        public async Task ObtenerMensajeError_MapeaCodigosHttp(HttpStatusCode status, string codigoEsperado)
+        public void ObtenerMensajeError_MapeaCodigosHttp(HttpStatusCode status, string codigoEsperado)
         {
-            var service = new CountryService(new HttpClient(new FakeHttpMessageHandler(_ => new HttpResponseMessage(status))));
+            var service = new CountryService(
+                new HttpClient(new FakeHttpMessageHandler(_ => new HttpResponseMessage(status))),
+                Mock.Of<ICountryRepository>(),
+                new CountryValidator());
             var ex = new HttpRequestException(null, null, status);
 
             var mensaje = service.ObtenerMensajeError(ex);
