@@ -33,16 +33,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        id: setup-dotnet
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      - name: Fijar SDK con global.json
+        shell: bash
+        run: |
+          echo "{\"sdk\":{\"version\":\"${{ steps.setup-dotnet.outputs.dotnet-version }}\",\"rollForward\":\"latestFeature\"}}" > global.json
+          dotnet --info
 
       - name: Cache paquetes NuGet
         uses: actions/cache@v4
         with:
           path: |
             ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/packages.lock.json') }}
+          key: nuget-${{ runner.os }}-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             nuget-${{ runner.os }}-${{ matrix.configuration }}-
             nuget-${{ runner.os }}-
@@ -56,29 +63,24 @@ jobs:
         run: dotnet build CountriesMVVM.Tests/CountriesMVVM.Tests.csproj --configuration ${{ matrix.configuration }} --no-restore
 
       - name: Test
-        run: >
-          dotnet test CountriesMVVM.Tests/CountriesMVVM.Tests.csproj
-          --configuration ${{ matrix.configuration }}
-          --no-build
-          --verbosity normal
-          --logger "trx;LogFileName=test-results-${{ matrix.os }}-${{ matrix.configuration }}.trx"
-          --results-directory "${{ runner.temp }}/test-results"
-          --collect:"XPlat Code Coverage"
+        run: dotnet test CountriesMVVM.Tests/CountriesMVVM.Tests.csproj --configuration ${{ matrix.configuration }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
 
       - name: Publicar artefacto de resultados de tests
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
-          path: ${{ runner.temp }}/test-results/**
+          path: TestResults/**
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Publicar artefacto de compilacion (Core)
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: countriesmvvm-core-${{ matrix.os }}-${{ matrix.configuration }}
-          path: |
-            CountriesMVVM.Core/bin/${{ matrix.configuration }}/**/*
+          path: CountriesMVVM.Core/bin/${{ matrix.configuration }}/net10.0/**
+          if-no-files-found: warn
           retention-days: 14
 
   maui-build:
@@ -96,16 +98,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        id: setup-dotnet
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      - name: Fijar SDK con global.json
+        shell: bash
+        run: |
+          echo "{\"sdk\":{\"version\":\"${{ steps.setup-dotnet.outputs.dotnet-version }}\",\"rollForward\":\"latestFeature\"}}" > global.json
+          dotnet --info
 
       - name: Cache paquetes NuGet
         uses: actions/cache@v4
         with:
           path: |
             ~/.nuget/packages
-          key: nuget-maui-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/packages.lock.json') }}
+          key: nuget-maui-${{ matrix.configuration }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             nuget-maui-${{ matrix.configuration }}-
             nuget-${{ runner.os }}-
@@ -116,24 +125,14 @@ jobs:
       - name: Restore (NuGet)
         run: dotnet restore CountriesMVVM/CountriesMVVM.csproj
 
-      - name: Build MAUI (Windows)
-        run: >
-          dotnet build CountriesMVVM/CountriesMVVM.csproj
-          --configuration ${{ matrix.configuration }}
-          --framework net10.0-windows10.0.19041.0
-          --no-restore
-
-      - name: Publish MAUI (Windows)
-        run: >
-          dotnet publish CountriesMVVM/CountriesMVVM.csproj
-          --configuration ${{ matrix.configuration }}
-          --framework net10.0-windows10.0.19041.0
-          --output "${{ runner.temp }}/maui-publish"
-          --no-build
+      - name: Build y Publish MAUI (Windows)
+        run: dotnet publish CountriesMVVM/CountriesMVVM.csproj --configuration ${{ matrix.configuration }} --framework net10.0-windows10.0.19041.0 --output "${{ runner.temp }}/maui-publish"
 
       - name: Publicar artefacto MAUI
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: countriesmvvm-maui-windows-${{ matrix.configuration }}
           path: ${{ runner.temp }}/maui-publish/**
+          if-no-files-found: warn
           retention-days: 14
