@@ -36,5 +36,11 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>La app necesita tu ubicación para mostrar tu posición GPS mientras explorás países.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>La cámara se usa para capturar fotos relacionadas con el país seleccionado.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>El acelerómetro y giroscopio se usan para detectar movimiento del dispositivo.</string>
 </dict>
 </plist>

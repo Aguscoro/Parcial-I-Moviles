@@ -1,64 +1,87 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodels="clr-namespace:CountriesMVVM.ViewModels"
              x:Class="CountriesMVVM.Views.CountryDetailPage">
-
-    <ContentPage.BindingContext>
-        <viewmodels:CountryDetailViewModel />
-    </ContentPage.BindingContext>
 
     <ScrollView>
         <VerticalStackLayout Padding="18,24" Spacing="16">
-                <Label Text="Detalle del pais"
-                       FontSize="28"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextPrimary}"
-                       HorizontalOptions="Center"/>
+            <Label Text="Detalle del pais"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}"
+                   HorizontalOptions="Center"/>
 
-                <Label Text="{Binding NombrePais}"
-                       FontSize="30"
-                       FontAttributes="Bold"
-                       HorizontalOptions="Center"
-                       TextColor="{StaticResource TextPrimary}"
-                       Margin="0,0,0,8"/>
+            <Label Text="{Binding NombrePais}"
+                   FontSize="30"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="{StaticResource TextPrimary}"
+                   Margin="0,0,0,8"/>
 
-                <Frame>
-                    <VerticalStackLayout Spacing="12">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Label Text="Capital"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   Grid.Column="0"/>
-                            <Label Text="{Binding CapitalPais}"
-                                   FontSize="18"
-                                   TextColor="{StaticResource TextSecondary}"
-                                   HorizontalOptions="End"
-                                   Grid.Column="1"/>
-                        </Grid>
+            <Frame>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Text="Capital"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"
+                               Grid.Column="0"/>
+                        <Label Text="{Binding CapitalPais}"
+                               FontSize="18"
+                               TextColor="{StaticResource TextSecondary}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
 
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Label Text="Moneda"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   Grid.Column="0"/>
-                            <Label Text="{Binding MonedaPais}"
-                                   FontSize="18"
-                                   TextColor="{StaticResource TextSecondary}"
-                                   HorizontalOptions="End"
-                                   Grid.Column="1"/>
-                        </Grid>
-                    </VerticalStackLayout>
-                </Frame>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Text="Moneda"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"
+                               Grid.Column="0"/>
+                        <Label Text="{Binding MonedaPais}"
+                               FontSize="18"
+                               TextColor="{StaticResource TextSecondary}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label Text="Sensores y permisos"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}"
+                   Margin="0,8,0,0"/>
+
+            <Button Text="Obtener ubicación GPS"
+                    Command="{Binding ObtenerUbicacionCommand}"/>
+
+            <Label Text="{Binding UbicacionGps}"
+                   FontSize="14"
+                   TextColor="{StaticResource TextSecondary}"/>
+
+            <Button Text="Capturar foto (cámara)"
+                    Command="{Binding CapturarFotoCommand}"/>
+
+            <Label Text="{Binding RutaFoto}"
+                   FontSize="12"
+                   LineBreakMode="WordWrap"
+                   TextColor="{StaticResource TextSecondary}"/>
+
+            <Frame>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding DatosAcelerometro}"
+                           FontSize="13"
+                           TextColor="{StaticResource TextPrimary}"/>
+                    <Label Text="{Binding DatosGiroscopio}"
+                           FontSize="13"
+                           TextColor="{StaticResource TextPrimary}"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label Text="{Binding MensajeSensores}"
+                   FontSize="13"
+                   HorizontalOptions="Center"
+                   TextColor="{StaticResource TextSecondary}"/>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
-
-
-
-
-
-
-
-
-

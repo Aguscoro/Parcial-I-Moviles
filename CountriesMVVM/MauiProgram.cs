@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using CountriesMVVM.Data;
 using CountriesMVVM.Services;
+using CountriesMVVM.Services.Sensors;
 using CountriesMVVM.Validations;
 using CountriesMVVM.ViewModels;
 using CountriesMVVM.Views;
@@ -32,6 +33,12 @@ namespace CountriesMVVM
             builder.Services.AddSingleton<ICountryService, CountryService>();
             builder.Services.AddSingleton<ICountryValidator, CountryValidator>();
             builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
+
+            builder.Services.AddSingleton<IPermissionService, MauiPermissionService>();
+            builder.Services.AddSingleton<ILocationService, MauiLocationService>();
+            builder.Services.AddSingleton<ICameraService, MauiCameraService>();
+            builder.Services.AddSingleton<IMotionSensorService, MauiMotionSensorService>();
+            builder.Services.AddSingleton<IVibrationService, MauiVibrationService>();
 
             builder.Services.AddTransient<StartViewModel>();
             builder.Services.AddTransient<CountriesViewModel>();
