@@ -1,3 +1,5 @@
+using System.Windows.Input;
+
 namespace CountriesMVVM.Commands
 {
     public class RelayCommand : ICommand
